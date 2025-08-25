@@ -1,0 +1,247 @@
+# 依赖文件
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 构建输出
+dist/
+build/
+.vite/
+.next/
+.nuxt/
+.output/
+.vercel/
+
+# 环境变量文件 (重要: 防止敏感信息泄露)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+*.env
+!.env.example
+
+# 日志文件
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 运行时数据
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# 覆盖率目录
+coverage/
+*.lcov
+
+# nyc 测试覆盖率
+.nyc_output/
+
+# Grunt 中间存储
+.grunt/
+
+# Bower 依赖目录
+bower_components/
+
+# node-waf 配置
+.lock-wscript
+
+# 编译的二进制插件
+build/Release/
+
+# 依赖目录
+node_modules/
+jspm_packages/
+
+# TypeScript 缓存
+*.tsbuildinfo
+
+# 可选的 npm 缓存目录
+.npm/
+
+# 可选的 eslint 缓存
+.eslintcache
+
+# 可选的 stylelint 缓存
+.stylelintcache
+
+# Microbundle 缓存
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# 可选的 REPL 历史
+.node_repl_history
+
+# 输出的 npm 包
+*.tgz
+
+# Yarn 完整性文件
+.yarn-integrity
+
+# parcel-bundler 缓存
+.cache/
+.parcel-cache/
+
+# Next.js 构建输出
+.next/
+out/
+
+# Nuxt.js 构建 / 生成输出
+.nuxt/
+dist/
+
+# Gatsby 文件
+.cache/
+public/
+
+# Vuepress 构建输出
+.vuepress/dist/
+
+# Serverless 目录
+.serverless/
+
+# FuseBox 缓存
+.fusebox/
+
+# DynamoDB Local 文件
+.dynamodb/
+
+# TernJS 端口文件
+.tern-port
+
+# Stores VSCode 版本用于远程容器
+.vscode-server/
+
+# IDE 和编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS 系统文件
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows 系统文件
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux 系统文件
+*~
+
+# 测试相关文件
+test-results/
+playwright-report/
+playwright/.cache/
+
+# 数据文件
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+*.temp
+
+# 备份文件
+*.bak
+*.backup
+*.old
+
+# 压缩文件
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# 敏感配置文件 (额外保护)
+config/secrets.json
+config/production.json
+config/local.json
+secrets/
+credentials/
+keys/
+certs/
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# API 密钥和令牌文件
+api-keys.json
+tokens.json
+secrets.json
+
+# 火山引擎相关敏感文件
+volcengine-config.json
+tts-config.json
+ark-config.json
+
+# Supabase 敏感配置
+supabase/.env
+supabase/config.toml
+
+# 用户上传的文件
+uploads/
+static/uploads/
+public/uploads/
+
+# 缓存文件
+.cache/
+cache/
+*.cache
+
+# 本地数据存储
+local-data/
+user-data/
+session-data/
+
+# 性能分析文件
+*.cpuprofile
+*.heapprofile
+*.heapsnapshot
+
+# 错误报告
+error-reports/
+crash-reports/
+
+# 监控和分析
+analytics/
+metrics/
+
+# 第三方服务配置
+.firebase/
+.vercel/
+.netlify/
+
+# 本地开发工具
+.history/
+.vscode-test/
+
+# 包管理器锁定文件 (可选，根据团队决定)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# 自定义忽略
+# 添加项目特定的忽略规则
