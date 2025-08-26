@@ -1,5 +1,11 @@
 # AI胎教内容生成平台
 
+[![CI](https://github.com/your-username/prenatal-educator-offical/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/prenatal-educator-offical/actions/workflows/ci.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 基于火山引擎AI服务的智能胎教解决方案，为准父母提供个性化的胎教内容生成、多音色语音合成和声音复刻服务。
 
 ## 🚀 技术栈
@@ -17,6 +23,12 @@
 - Node.js 18+
 - npm 或 pnpm
 
+### 克隆项目
+```bash
+git clone https://github.com/your-username/prenatal-educator-offical.git
+cd prenatal-educator-offical
+```
+
 ### 安装依赖
 ```bash
 npm install
@@ -24,14 +36,65 @@ npm install
 pnpm install
 ```
 
-### 启动开发服务器
+### 环境配置
+
+**重要：** 环境变量文件必须放在 `api/` 目录下，不是项目根目录。
+
 ```bash
-npm run dev
-# 或
-pnpm dev
+# 1. 复制环境变量示例文件
+cp env.example api/.env
+
+# 2. 编辑环境变量文件
+vim api/.env
+# 或使用其他编辑器
+code api/.env
 ```
 
-访问 http://localhost:5173 查看应用。
+**必填配置项：**
+```env
+# 火山引擎 API 配置（生产模式必填）
+VOLCENGINE_ARK_API_KEY=your_ark_api_key_here
+VOLCENGINE_TTS_ACCESS_TOKEN=your_tts_access_token_here
+VOLCENGINE_APP_ID=your_app_id_here
+
+# 运行模式（可选，默认为 mvp）
+RUN_MODE=sandbox  # 开发时建议使用 sandbox 模式
+SANDBOX=true      # 启用沙箱模式，无需真实 API 密钥
+```
+
+### 启动开发服务器
+
+```bash
+# 启动后端服务（端口 3001）
+npm run dev:api
+
+# 启动前端服务（端口 5173）
+npm run dev
+
+# 或同时启动前后端
+npm run dev:full
+```
+
+**访问地址：**
+- 前端应用：http://localhost:5173
+- API 调试面板：http://localhost:5173/debug/api
+- 后端健康检查：http://localhost:3001/api/health
+
+### 开发环境验证
+
+```bash
+# 运行代码检查
+npm run lint
+
+# 运行类型检查
+npm run type-check
+
+# 运行测试
+npm test
+
+# 运行 E2E 测试
+npm run test:e2e
+```
 
 ## 🎓 学习模式说明
 
