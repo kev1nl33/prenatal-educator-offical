@@ -27,7 +27,7 @@ interface ServiceStats {
 }
 
 // 内存中的统计数据（生产环境应使用Redis或数据库）
-let serviceStats: ServiceStats = {
+const serviceStats: ServiceStats = {
   ark: {
     totalCalls: 0,
     successCalls: 0,

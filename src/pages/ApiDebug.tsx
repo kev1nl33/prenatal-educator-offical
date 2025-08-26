@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Play, Code, FileText, Volume2, Mic, Activity, Server, Settings, Wifi, Pause, Square, Download, Copy, ChevronDown, ChevronUp, Clock, CheckCircle, XCircle, Trash2, BarChart3 } from 'lucide-react';
 
 interface ParameterComparison {
-  frontend: Record<string, any>;
-  backend: Record<string, any>;
-  volcengine: Record<string, any>;
+  frontend: Record<string, unknown>;
+  backend: Record<string, unknown>;
+  volcengine: Record<string, unknown>;
 }
 
 interface ApiResponse {
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
   duration?: number;
 }
@@ -26,9 +26,30 @@ interface RequestHistoryItem {
   success: boolean;
 }
 
+interface VoiceCloneStatus {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress?: number;
+  message?: string;
+}
+
+interface VoiceCloneItem {
+  id: string;
+  name: string;
+  language: string;
+  modelType: string;
+  createdAt: string;
+  status: string;
+}
+
 const ApiDebug: React.FC = () => {
   // 健康检查和系统状态
-  const [healthStatus, setHealthStatus] = useState<any>(null);
+  const [healthStatus, setHealthStatus] = useState<{
+    ok: boolean;
+    sandbox: boolean;
+    env: { arkKey: boolean; ttsToken: boolean };
+    port: number;
+  } | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
   const [apiBaseUrl, setApiBaseUrl] = useState(() => {
     return localStorage.getItem('api_debug_base_url') || '';
@@ -83,8 +104,8 @@ const ApiDebug: React.FC = () => {
   const [vcParams, setVcParams] = useState<ParameterComparison | null>(null);
   const [currentVoiceId, setCurrentVoiceId] = useState<string>('');
   const [vcStatusLoading, setVcStatusLoading] = useState(false);
-  const [vcStatus, setVcStatus] = useState<any | null>(null);
-  const [vcList, setVcList] = useState<any[]>([]);
+  const [vcStatus, setVcStatus] = useState<VoiceCloneStatus | null>(null);
+  const [vcList, setVcList] = useState<VoiceCloneItem[]>([]);
 
   // 请求历史记录状态
   const [requestHistory, setRequestHistory] = useState<RequestHistoryItem[]>([]);
@@ -108,16 +129,16 @@ const ApiDebug: React.FC = () => {
   const MAX_CONCURRENT_REQUESTS = 2;
 
   // 引入参数映射工具
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const _mappingUtils = (() => {
     try {
       // 动态引入以避免构建时报未使用警告
       // 仅用于生成参数对照展示
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+       
       const utils = require('@/utils/parameterMapping');
       return utils;
     } catch {
-      return {} as any;
+      return {};
     }
   })();
 

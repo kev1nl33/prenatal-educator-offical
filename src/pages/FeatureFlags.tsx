@@ -36,7 +36,7 @@ const FeatureFlagsPage: React.FC = () => {
     ENABLE_ANALYTICS: false,
   });
   
-  const [descriptions, setDescriptions] = useState<Record<keyof FeatureFlags, FeatureFlagDescription>>({} as any);
+  const [descriptions, setDescriptions] = useState<Record<keyof FeatureFlags, FeatureFlagDescription>>({} as Record<keyof FeatureFlags, FeatureFlagDescription>);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');

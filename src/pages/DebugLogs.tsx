@@ -195,7 +195,7 @@ const DebugLogs: React.FC = () => {
             
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'success' | 'error')}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               <option value="all">所有状态</option>
@@ -205,7 +205,7 @@ const DebugLogs: React.FC = () => {
             
             <select
               value={apiFilter}
-              onChange={(e) => setApiFilter(e.target.value as any)}
+              onChange={(e) => setApiFilter(e.target.value as 'all' | 'ark' | 'tts' | 'vc')}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               <option value="all">所有 API</option>
