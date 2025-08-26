@@ -12,8 +12,34 @@ const router = express.Router();
  * 集成缓存策略和超时控制
  */
 
+// 定义TTS参数类型
+interface TTSFrontendParams {
+  userId?: string;
+  requestId?: string;
+  text: string;
+  voiceType?: string;
+  encoding?: string;
+  sampleRate?: number;
+  speed?: number;
+  volume?: number;
+  emotion?: string;
+}
+
+interface TTSBackendParams {
+  app: { appid: string | undefined };
+  user: { uid: string };
+  request: { reqid: string; text: string; voice_type: string };
+  audio: { encoding: string; sample_rate: number; speech_rate: number; loudness_rate: number; emotion: string };
+}
+
+interface TTSResponse {
+  success: boolean;
+  data: ArrayBuffer;
+  headers: unknown;
+}
+
 // 参数映射：前端 camelCase -> 后端 snake_case
-const mapTTSParams = (frontendParams: any) => {
+const mapTTSParams = (frontendParams: TTSFrontendParams): TTSBackendParams => {
   return {
     app: {
       appid: process.env.VOLCENGINE_APP_ID
@@ -42,7 +68,7 @@ const generateRequestId = (): string => {
 };
 
 // 验证TTS参数
-const validateTTSParams = (params: any): { valid: boolean; errors: string[] } => {
+const validateTTSParams = (params: TTSFrontendParams): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
   
   // 必需参数检查
@@ -92,7 +118,7 @@ const validateTTSParams = (params: any): { valid: boolean; errors: string[] } =>
 };
 
 // 调用火山引擎TTS API
-const callVolcengineTTS = async (params: any, timeoutMs: number = 30000): Promise<any> => {
+const callVolcengineTTS = async (params: TTSBackendParams, timeoutMs: number = 30000): Promise<TTSResponse> => {
   const accessToken = process.env.VOLCENGINE_TTS_ACCESS_TOKEN;
   
   if (!accessToken) {
@@ -116,13 +142,14 @@ const callVolcengineTTS = async (params: any, timeoutMs: number = 30000): Promis
       data: response.data,
       headers: response.headers
     };
-  } catch (error: any) {
-    if (error.code === 'ECONNABORTED') {
+  } catch (error: unknown) {
+    const err = error as { code?: string; response?: { status: number } };
+    if (err.code === 'ECONNABORTED') {
       throw new Error(`TTS请求超时（${timeoutMs}ms）`);
     }
     
-    if (error.response) {
-      const statusCode = error.response.status;
+    if (err.response) {
+      const statusCode = err.response.status;
       let message = '服务异常，请稍后重试';
       
       switch (statusCode) {
@@ -140,7 +167,7 @@ const callVolcengineTTS = async (params: any, timeoutMs: number = 30000): Promis
       throw new Error(`${message} (状态码: ${statusCode})`);
     }
     
-    throw error;
+    throw err;
   }
 };
 
@@ -150,7 +177,20 @@ const callVolcengineTTS = async (params: any, timeoutMs: number = 30000): Promis
  */
 router.post('/synthesize', async (req, res) => {
   const startTime = Date.now();
-  let logData: any = {
+  let logData: {
+    apiName: string;
+    method: string;
+    url: string;
+    timestamp: string;
+    requestParams: unknown;
+    statusCode?: number;
+    duration?: number;
+    success?: boolean;
+    errorMessage?: string;
+    responseData?: unknown;
+    requestSummary?: string;
+    responseSummary?: string;
+  } = {
     apiName: 'TTS合成',
     method: 'POST',
     url: '/api/tts/synthesize',
@@ -197,14 +237,15 @@ router.post('/synthesize', async (req, res) => {
       // 更新统计数据
       updateServiceStats('tts', duration, true);
       
+      const resultObj = result as { audioUrl?: string; duration?: number };
       logData = {
         ...logData,
         statusCode: 200,
         duration,
         success: true,
-        responseData: { mock: true, audioSize: result.audioUrl?.length || 0 },
+        responseData: { mock: true, audioSize: resultObj.audioUrl?.length || 0 },
         requestSummary: `文本: "${req.body.text.substring(0, 50)}...", 音色: ${req.body.voiceType || 'zh_female_tianmeixiaomei_emo_v2_mars_bigtts'}`,
-        responseSummary: `Mock服务, 音频大小: ${result.audioUrl?.length || 0} bytes`
+        responseSummary: `Mock服务, 音频大小: ${resultObj.audioUrl?.length || 0} bytes`
       };
       
       console.log('TTS API调用日志 (Mock服务):', logData);
@@ -212,8 +253,8 @@ router.post('/synthesize', async (req, res) => {
       return res.json({
         success: true,
         data: {
-          audioUrl: result.audioUrl,
-          duration: result.duration,
+          audioUrl: resultObj.audioUrl,
+          duration: resultObj.duration,
           cached: false,
           mock: true
         },
@@ -234,15 +275,16 @@ router.post('/synthesize', async (req, res) => {
     // 检查缓存
     const cachedResult = await ttsCacheManager.get(cacheParams);
     if (cachedResult) {
+      const cacheObj = cachedResult as { audioBuffer?: Buffer; audioUrl?: string; duration?: number };
       const duration = Date.now() - startTime;
       logData = {
         ...logData,
         statusCode: 200,
         duration,
         success: true,
-        responseData: { cached: true, audioSize: cachedResult.audioBuffer?.length || 0 },
+        responseData: { cached: true, audioSize: cacheObj.audioBuffer?.length || 0 },
         requestSummary: `文本: "${req.body.text.substring(0, 50)}...", 音色: ${cacheParams.voiceType}`,
-        responseSummary: `缓存命中, 音频大小: ${cachedResult.audioBuffer?.length || 0} bytes`
+        responseSummary: `缓存命中, 音频大小: ${cacheObj.audioBuffer?.length || 0} bytes`
       };
       
       console.log('TTS API调用日志 (缓存命中):', logData);
@@ -250,8 +292,8 @@ router.post('/synthesize', async (req, res) => {
       return res.json({
         success: true,
         data: {
-          audioUrl: cachedResult.audioUrl,
-          duration: cachedResult.duration,
+          audioUrl: cacheObj.audioUrl,
+          duration: cacheObj.duration,
           cached: true
         },
         timestamp: new Date().toISOString()
@@ -305,7 +347,8 @@ router.post('/synthesize', async (req, res) => {
       timestamp: new Date().toISOString()
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     const duration = Date.now() - startTime;
     
     // 更新统计数据
@@ -316,14 +359,14 @@ router.post('/synthesize', async (req, res) => {
       statusCode: 500,
       duration,
       success: false,
-      errorMessage: error.message
+      errorMessage: err.message
     };
     
     console.error('TTS API调用错误:', logData);
     
     res.status(500).json({
       success: false,
-      error: error.message || '服务异常，请稍后重试',
+      error: err.message || '服务异常，请稍后重试',
       timestamp: new Date().toISOString()
     });
   }
@@ -348,10 +391,11 @@ router.get('/cache/stats', async (req, res) => {
       },
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     res.status(500).json({
       success: false,
-      error: error.message || '获取缓存统计失败',
+      error: err.message || '获取缓存统计失败',
       timestamp: new Date().toISOString()
     });
   }
@@ -370,10 +414,11 @@ router.delete('/cache', async (req, res) => {
       message: 'TTS缓存已清空',
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     res.status(500).json({
       success: false,
-      error: error.message || '清空缓存失败',
+      error: err.message || '清空缓存失败',
       timestamp: new Date().toISOString()
     });
   }

@@ -1,8 +1,7 @@
 import express from 'express';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import { ttsCacheManager } from '../utils/cacheManager.js';
-import fs from 'fs/promises';
-import path from 'path';
+
 
 const router = express.Router();
 
@@ -372,8 +371,8 @@ function getServiceStatus(stats: APIStats): string {
 }
 
 function generatePerformanceRecommendations(
-  arkPerformance: any,
-  ttsPerformance: any,
+  arkPerformance: { isWithinTarget: boolean },
+  ttsPerformance: { isWithinTarget: boolean },
   endToEndSuccessRate: number
 ): string[] {
   const recommendations: string[] = [];

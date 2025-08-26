@@ -32,8 +32,8 @@ interface ApiLog {
   errorMessage?: string;
   success: boolean;
   userId?: string;
-  requestParams?: any;
-  responseData?: any;
+  requestParams?: unknown;
+  responseData?: unknown;
 }
 
 // 统计数据接口
@@ -270,6 +270,7 @@ router.get('/stats', async (req, res) => {
     // 计算本周数据
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const weekLogs = logs.filter(log => 
       new Date(log.timestamp) >= weekAgo
     );

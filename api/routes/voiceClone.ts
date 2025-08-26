@@ -5,8 +5,47 @@ import { updateServiceStats } from './dashboard.js';
 
 const router = express.Router();
 
+// 定义音频数据类型
+interface AudioData {
+  audioBytes?: string;
+  audio_bytes?: string;
+  audioFormat?: string;
+  audio_format?: string;
+  text: string;
+}
+
+// 定义训练参数类型
+interface TrainParams {
+  speakerName?: string;
+  speaker_name?: string;
+  speakerId?: string;
+  speaker_id?: string;
+  language?: string;
+  modelType?: string;
+  model_type?: string;
+  source?: string;
+  extraParams?: unknown;
+  extra_params?: unknown;
+  audios: AudioData[];
+}
+
+// 定义规范化后的参数类型
+interface NormalizedTrainParams {
+  speakerName: string;
+  speakerId?: string;
+  language: string;
+  modelType: string;
+  source: string;
+  extraParams: unknown;
+  audios: Array<{
+    audioBytes: string;
+    audioFormat: string;
+    text: string;
+  }>;
+}
+
 // 校验与规范化训练参数
-function validateAndNormalizeTrainParams(body: any): { valid: boolean; errors: string[]; normalized?: any } {
+function validateAndNormalizeTrainParams(body: TrainParams): { valid: boolean; errors: string[]; normalized?: NormalizedTrainParams } {
   const errors: string[] = [];
 
   const speakerName = body.speakerName || body.speaker_name;
@@ -46,7 +85,7 @@ function validateAndNormalizeTrainParams(body: any): { valid: boolean; errors: s
     modelType: body.modelType || body.model_type || 'standard',
     source: body.source || 'app',
     extraParams: body.extraParams || body.extra_params || {},
-    audios: audios.map((a: any) => ({
+    audios: audios.map((a: AudioData) => ({
       audioBytes: a.audioBytes || a.audio_bytes,
       audioFormat: (a.audioFormat || a.audio_format).toLowerCase(),
       text: a.text
@@ -94,10 +133,14 @@ router.post('/train', async (req, res) => {
       const duration = Date.now() - start;
       success = true;
       updateServiceStats('voiceClone', duration, true);
+      
+      // 使用success变量
+      console.log('Voice clone training started successfully:', success);
 
+      const resultObj = result as { data?: unknown };
       return res.json({
         success: true,
-        data: result.data,
+        data: resultObj.data,
         timestamp: new Date().toISOString()
       });
     }
@@ -110,12 +153,13 @@ router.post('/train', async (req, res) => {
       error: '生产环境的声音复刻服务尚未接入，请启用沙箱模式或稍后重试',
       timestamp: new Date().toISOString()
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const error = err as { message?: string };
     const duration = Date.now() - start;
     updateServiceStats('voiceClone', duration, false);
     return res.status(500).json({
       success: false,
-      error: err?.message || '声音复刻服务处理失败',
+      error: error?.message || '声音复刻服务处理失败',
       timestamp: new Date().toISOString()
     });
   }
@@ -134,7 +178,7 @@ router.get('/status/:voiceId', async (req, res) => {
 
     if (shouldUseMockServices()) {
       const service = MockServiceFactory.getVoiceCloneService();
-      const result = await service.getTrainingStatus(voiceId);
+      const result = await service.getTrainingStatus(voiceId) as { success?: boolean; error?: string; data?: unknown };
       const duration = Date.now() - start;
       updateServiceStats('voiceClone', duration, !!result.success);
       if (!result.success) {
@@ -146,10 +190,11 @@ router.get('/status/:voiceId', async (req, res) => {
     const duration = Date.now() - start;
     updateServiceStats('voiceClone', duration, false);
     return res.status(501).json({ success: false, error: '生产环境未实现' });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const error = err as { message?: string };
     const duration = Date.now() - start;
     updateServiceStats('voiceClone', duration, false);
-    return res.status(500).json({ success: false, error: err?.message || '获取状态失败' });
+    return res.status(500).json({ success: false, error: error?.message || '获取状态失败' });
   }
 });
 
@@ -160,7 +205,7 @@ router.get('/list', async (req, res) => {
     const userId = String(req.query.userId || 'user_001'); // 默认一个演示用户，便于沙箱模式演示
     if (shouldUseMockServices()) {
       const service = MockServiceFactory.getVoiceCloneService();
-      const result = await service.listVoiceClones(userId);
+      const result = await service.listVoiceClones(userId) as { success?: boolean; data?: unknown };
       const duration = Date.now() - start;
       updateServiceStats('voiceClone', duration, !!result.success);
       return res.json({ success: true, data: result.data });
@@ -169,10 +214,11 @@ router.get('/list', async (req, res) => {
     const duration = Date.now() - start;
     updateServiceStats('voiceClone', duration, false);
     return res.status(501).json({ success: false, error: '生产环境未实现' });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const error = err as { message?: string };
     const duration = Date.now() - start;
     updateServiceStats('voiceClone', duration, false);
-    return res.status(500).json({ success: false, error: err?.message || '获取列表失败' });
+    return res.status(500).json({ success: false, error: error?.message || '获取列表失败' });
   }
 });
 

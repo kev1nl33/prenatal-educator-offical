@@ -9,7 +9,7 @@ import path from 'path';
 
 interface CacheItem {
   key: string;
-  data: any;
+  data: unknown;
   timestamp: number;
   ttl: number; // 生存时间（秒）
   accessCount: number;
@@ -73,7 +73,7 @@ class TTSCacheManager {
   /**
    * 获取缓存
    */
-  async get(params: TTSCacheParams): Promise<any | null> {
+  async get(params: TTSCacheParams): Promise<unknown | null> {
     const key = this.generateCacheKey(params);
     const item = this.cache.get(key);
 
@@ -100,7 +100,7 @@ class TTSCacheManager {
   /**
    * 设置缓存
    */
-  async set(params: TTSCacheParams, data: any, ttl?: number): Promise<void> {
+  async set(params: TTSCacheParams, data: unknown, ttl?: number): Promise<void> {
     const key = this.generateCacheKey(params);
     const now = Date.now();
     
@@ -264,47 +264,49 @@ class TTSCacheManager {
   /**
    * 序列化数据
    */
-  private serializeData(data: any): any {
-    if (data && typeof data === 'object' && data.audioBuffer) {
+  private serializeData(data: unknown): unknown {
+    const dataObj = data as { audioBuffer?: Buffer };
+    if (dataObj && typeof dataObj === 'object' && dataObj.audioBuffer) {
       // 如果是音频数据，保存到文件并返回路径
       const audioFileName = `audio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.mp3`;
       const audioPath = path.join(this.cacheDir, audioFileName);
       
       try {
-        fs.writeFileSync(audioPath, data.audioBuffer);
+        fs.writeFileSync(audioPath, dataObj.audioBuffer);
         return {
-          ...data,
+          ...dataObj,
           audioBuffer: null,
           audioFilePath: audioPath
         };
       } catch (error) {
         console.error('保存音频文件失败:', error);
-        return data;
+        return dataObj;
       }
     }
     
-    return data;
+    return dataObj;
   }
 
   /**
    * 反序列化数据
    */
-  private deserializeData(data: any): any {
-    if (data && data.audioFilePath && fs.existsSync(data.audioFilePath)) {
+  private deserializeData(data: unknown): unknown {
+    const dataObj = data as { audioFilePath?: string; audioBuffer?: Buffer };
+    if (dataObj && dataObj.audioFilePath && fs.existsSync(dataObj.audioFilePath)) {
       try {
-        const audioBuffer = fs.readFileSync(data.audioFilePath);
+        const audioBuffer = fs.readFileSync(dataObj.audioFilePath);
         return {
-          ...data,
+          ...dataObj,
           audioBuffer,
           audioFilePath: undefined
         };
       } catch (error) {
         console.error('读取音频文件失败:', error);
-        return data;
+        return dataObj;
       }
     }
     
-    return data;
+    return dataObj;
   }
 
   /**

@@ -162,10 +162,11 @@ router.get('/run-mode', (req, res) => {
       },
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     res.status(500).json({
       success: false,
-      error: error.message || '获取运行模式失败',
+      error: err.message || '获取运行模式失败',
       timestamp: new Date().toISOString()
     });
   }
@@ -205,10 +206,11 @@ router.post('/run-mode', (req, res) => {
       },
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     res.status(500).json({
       success: false,
-      error: error.message || '切换运行模式失败',
+      error: err.message || '切换运行模式失败',
       timestamp: new Date().toISOString()
     });
   }
@@ -242,10 +244,11 @@ router.get('/mock-status', (req, res) => {
       },
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     res.status(500).json({
       success: false,
-      error: error.message || '获取Mock状态失败',
+      error: err.message || '获取Mock状态失败',
       timestamp: new Date().toISOString()
     });
   }
@@ -269,10 +272,11 @@ router.post('/reset-to-mvp', (req, res) => {
       },
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     res.status(500).json({
       success: false,
-      error: error.message || '重置MVP模式失败',
+      error: err.message || '重置MVP模式失败',
       timestamp: new Date().toISOString()
     });
   }

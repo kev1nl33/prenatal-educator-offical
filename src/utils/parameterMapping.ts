@@ -4,8 +4,8 @@
  */
 
 // 将 camelCase 转换为 snake_case
-export function camelToSnake(obj: Record<string, any>): Record<string, any> {
-  const result: Record<string, any> = {};
+export function camelToSnake(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
   
   for (const [key, value] of Object.entries(obj)) {
     const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
@@ -16,8 +16,8 @@ export function camelToSnake(obj: Record<string, any>): Record<string, any> {
 }
 
 // 将 snake_case 转换为 camelCase
-export function snakeToCamel(obj: Record<string, any>): Record<string, any> {
-  const result: Record<string, any> = {};
+export function snakeToCamel(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
   
   for (const [key, value] of Object.entries(obj)) {
     const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
@@ -65,10 +65,10 @@ export const ARK_PARAMETER_MAPPING = {
 
 // 映射前端参数到后端参数
 export function mapFrontendToBackend(
-  frontendParams: Record<string, any>,
+  frontendParams: Record<string, unknown>,
   mapping: Record<string, string>
-): Record<string, any> {
-  const backendParams: Record<string, any> = {};
+): Record<string, unknown> {
+  const backendParams: Record<string, unknown> = {};
   
   for (const [frontendKey, value] of Object.entries(frontendParams)) {
     const backendKey = mapping[frontendKey] || frontendKey;
@@ -80,10 +80,10 @@ export function mapFrontendToBackend(
 
 // 映射后端参数到前端参数
 export function mapBackendToFrontend(
-  backendParams: Record<string, any>,
+  backendParams: Record<string, unknown>,
   mapping: Record<string, string>
-): Record<string, any> {
-  const frontendParams: Record<string, any> = {};
+): Record<string, unknown> {
+  const frontendParams: Record<string, unknown> = {};
   
   for (const [backendKey, value] of Object.entries(backendParams)) {
     const frontendKey = mapping[backendKey] || backendKey;
@@ -95,10 +95,10 @@ export function mapBackendToFrontend(
 
 // 生成 TTS 火山引擎调用参数
 export function generateVolcengineTTSParams(
-  backendParams: Record<string, any>,
+  backendParams: Record<string, unknown>,
   appId: string = 'your_app_id',
   userId: string = 'user_12345'
-): Record<string, any> {
+): Record<string, unknown> {
   return {
     app: {
       appid: appId
@@ -123,9 +123,9 @@ export function generateVolcengineTTSParams(
 
 // 生成 Ark 火山引擎调用参数
 export function generateVolcengineArkParams(
-  backendParams: Record<string, any>,
+  backendParams: Record<string, unknown>,
   systemPrompt: string = '你是一个专业的胎教故事创作助手，请根据用户输入生成温馨有趣的胎教故事。'
-): Record<string, any> {
+): Record<string, unknown> {
   return {
     model: backendParams.model || 'doubao-seed-1-6-250615',
     messages: [
@@ -147,14 +147,14 @@ export function generateVolcengineArkParams(
 
 // 参数对比结果接口
 export interface ParameterComparison {
-  frontend: Record<string, any>;
-  backend: Record<string, any>;
-  volcengine: Record<string, any>;
+  frontend: Record<string, unknown>;
+  backend: Record<string, unknown>;
+  volcengine: Record<string, unknown>;
 }
 
 // 生成完整的参数对比
 export function generateParameterComparison(
-  frontendParams: Record<string, any>,
+  frontendParams: Record<string, unknown>,
   apiType: 'tts' | 'ark',
   options?: {
     appId?: string;
@@ -165,7 +165,7 @@ export function generateParameterComparison(
   const mapping = apiType === 'tts' ? TTS_PARAMETER_MAPPING : ARK_PARAMETER_MAPPING;
   const backendParams = mapFrontendToBackend(frontendParams, mapping.frontend_to_backend);
   
-  let volcengineParams: Record<string, any>;
+  let volcengineParams: Record<string, unknown>;
   
   if (apiType === 'tts') {
     volcengineParams = generateVolcengineTTSParams(
@@ -206,12 +206,12 @@ export function getFriendlyErrorMessage(statusCode: number, defaultMessage?: str
 }
 
 // 递归地将 camelCase 转换为 snake_case（支持嵌套对象与数组）
-export function camelToSnakeDeep(input: any): any {
+export function camelToSnakeDeep(input: unknown): unknown {
   if (Array.isArray(input)) {
     return input.map((item) => camelToSnakeDeep(item));
   }
   if (input && typeof input === 'object') {
-    const result: Record<string, any> = {};
+    const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(input)) {
       const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
       result[snakeKey] = camelToSnakeDeep(value);
@@ -223,24 +223,36 @@ export function camelToSnakeDeep(input: any): any {
 
 // 生成 声音复刻（训练） 的火山引擎调用参数（示意）
 export function generateVolcengineVoiceCloneTrainParams(
-  backendParams: Record<string, any>
-): Record<string, any> {
-  const audios = Array.isArray(backendParams.audios) ? backendParams.audios : [];
+  backendParams: Record<string, unknown>
+): Record<string, unknown> {
+  const backendObj = backendParams as { 
+    audios?: unknown[];
+    speaker_name?: string;
+    speaker_id?: string;
+    language?: string;
+    model_type?: string;
+    source?: string;
+    extra_params?: Record<string, unknown>;
+  };
+  const audios = Array.isArray(backendObj.audios) ? backendObj.audios : [];
   return {
     task: 'voice_clone_train',
-    dataset: audios.map((a: any, idx: number) => ({
-      id: `sample_${idx + 1}`,
-      audio_base64: a.audio_bytes, // Base64 音频
-      audio_format: a.audio_format, // wav/mp3/...
-      transcript: a.text
-    })),
+    dataset: audios.map((a: unknown, idx: number) => {
+      const audioObj = a as { audio_bytes?: string; audio_format?: string; text?: string };
+      return {
+        id: `sample_${idx + 1}`,
+        audio_base64: audioObj.audio_bytes, // Base64 音频
+        audio_format: audioObj.audio_format, // wav/mp3/...
+        transcript: audioObj.text
+      };
+    }),
     config: {
-      speaker_name: backendParams.speaker_name,
-      speaker_id: backendParams.speaker_id || undefined,
-      language: backendParams.language || 'zh-CN',
-      model_type: backendParams.model_type || 'standard',
-      source: backendParams.source || 'app',
-      extra_params: backendParams.extra_params || {}
+      speaker_name: backendObj.speaker_name,
+      speaker_id: backendObj.speaker_id || undefined,
+      language: backendObj.language || 'zh-CN',
+      model_type: backendObj.model_type || 'standard',
+      source: backendObj.source || 'app',
+      extra_params: backendObj.extra_params || {}
     }
   };
 }

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Settings, Heart, Sparkles, Bug, BarChart3, FileText, Activity } from 'lucide-react';
+import { Settings, Heart, Sparkles, Bug, BarChart3, FileText } from 'lucide-react';
 
 export default function Home() {
   return (

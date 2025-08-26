@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Play, Code, FileText, Volume2, Mic, Activity, Server, Settings, Wifi, Pause, Square, Download, Copy, ChevronDown, ChevronUp, Clock, CheckCircle, XCircle, Trash2, BarChart3 } from 'lucide-react';
 
 interface ParameterComparison {
@@ -27,10 +27,13 @@ interface RequestHistoryItem {
 }
 
 interface VoiceCloneStatus {
-  id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  id?: string;
+  status?: 'pending' | 'processing' | 'completed' | 'failed';
   progress?: number;
   message?: string;
+  success?: boolean;
+  error?: string;
+  data?: unknown;
 }
 
 interface VoiceCloneItem {
@@ -49,6 +52,10 @@ const ApiDebug: React.FC = () => {
     sandbox: boolean;
     env: { arkKey: boolean; ttsToken: boolean };
     port: number;
+    status?: string;
+    lastCheck?: string;
+    requestId?: string;
+    error?: string;
   } | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
   const [apiBaseUrl, setApiBaseUrl] = useState(() => {
@@ -82,6 +89,7 @@ const ApiDebug: React.FC = () => {
   
   // TTS播放器状态
   const [isPlaying, setIsPlaying] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isPaused, setIsPaused] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -135,6 +143,7 @@ const ApiDebug: React.FC = () => {
       // 动态引入以避免构建时报未使用警告
       // 仅用于生成参数对照展示
        
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const utils = require('@/utils/parameterMapping');
       return utils;
     } catch {
@@ -228,13 +237,13 @@ const ApiDebug: React.FC = () => {
   };
   
   // 清理音频资源
-  const cleanupAudio = () => {
+  const cleanupAudio = useCallback(() => {
     if (audioRef) {
       audioRef.pause();
       audioRef.src = '';
     }
     setAudioUrl('');
-  };
+  }, [audioRef]);
 
   // 并发控制函数
   const executeWithConcurrencyControl = async (requestId: string, type: string, requestFn: () => Promise<void>) => {
@@ -286,7 +295,7 @@ const ApiDebug: React.FC = () => {
 
   // 更新队列位置
   const updateQueuePositions = () => {
-    setQueuePosition(prev => {
+    setQueuePosition(() => {
       const newPositions: {[key: string]: number} = {};
       requestQueue.forEach((req, index) => {
         newPositions[req.id] = index + 1;
@@ -337,7 +346,7 @@ const ApiDebug: React.FC = () => {
   // 指数退避重试
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
   
-  const retryWithBackoff = async (fn: () => Promise<any>, maxRetries: number = 2) => {
+  const retryWithBackoff = async (fn: () => Promise<unknown>, maxRetries: number = 2) => {
     for (let i = 0; i <= maxRetries; i++) {
       try {
         return await fn();
@@ -352,25 +361,25 @@ const ApiDebug: React.FC = () => {
     }
   };
 
-  const camelToSnakeDeep = (input: any): any => {
+  const camelToSnakeDeep = (input: unknown): unknown => {
     return _mappingUtils.camelToSnakeDeep ? _mappingUtils.camelToSnakeDeep(input) : input;
   };
-  const generateVolcengineVoiceCloneTrainParams = (backendParams: Record<string, any>): Record<string, any> => {
+  const generateVolcengineVoiceCloneTrainParams = (backendParams: Record<string, unknown>): Record<string, unknown> => {
     return _mappingUtils.generateVolcengineVoiceCloneTrainParams
       ? _mappingUtils.generateVolcengineVoiceCloneTrainParams(backendParams)
       : backendParams;
   };
 
   // 获取API基础URL
-  const getApiBaseUrl = () => {
+  const getApiBaseUrl = useCallback(() => {
     if (useCustomApiBase && apiBaseUrl) {
       return apiBaseUrl;
     }
     return '';
-  };
+  }, [useCustomApiBase, apiBaseUrl]);
 
   // 健康检查函数
-  const checkHealth = async () => {
+  const checkHealth = useCallback(async () => {
     setHealthLoading(true);
     try {
       const baseUrl = getApiBaseUrl();
@@ -384,6 +393,9 @@ const ApiDebug: React.FC = () => {
     } catch (error) {
       setHealthStatus({
         ok: false,
+        sandbox: false,
+        env: { arkKey: false, ttsToken: false },
+        port: 0,
         status: 'error',
         error: (error as Error).message,
         lastCheck: new Date().toISOString()
@@ -391,13 +403,13 @@ const ApiDebug: React.FC = () => {
     } finally {
       setHealthLoading(false);
     }
-  };
+  }, [getApiBaseUrl]);
 
   // 保存API基础URL设置
-  const saveApiBaseSettings = () => {
+  const saveApiBaseSettings = useCallback(() => {
     localStorage.setItem('api_debug_base_url', apiBaseUrl);
     localStorage.setItem('api_debug_use_custom', useCustomApiBase.toString());
-  };
+  }, [apiBaseUrl, useCustomApiBase]);
 
   // 添加请求历史记录
   const addRequestHistory = (item: Omit<RequestHistoryItem, 'id' | 'timestamp'>) => {
@@ -429,12 +441,12 @@ const ApiDebug: React.FC = () => {
     checkHealth();
     const interval = setInterval(checkHealth, 10000); // 每10秒轮询
     return () => clearInterval(interval);
-  }, [useCustomApiBase, apiBaseUrl]);
+  }, [useCustomApiBase, apiBaseUrl, checkHealth]);
 
   // 保存设置
   useEffect(() => {
     saveApiBaseSettings();
-  }, [apiBaseUrl, useCustomApiBase]);
+  }, [saveApiBaseSettings]);
   
   // 音频播放器事件监听
   useEffect(() => {
@@ -469,7 +481,7 @@ const ApiDebug: React.FC = () => {
         audio.removeEventListener('error', () => {});
       };
     }
-  }, [audioUrl, audioRef]);
+  }, [audioUrl, audioRef, cleanupAudio]);
   
   // 清理音频资源
   useEffect(() => {
@@ -479,7 +491,7 @@ const ApiDebug: React.FC = () => {
         audioRef.src = '';
       }
     };
-  }, []);
+  }, [audioRef]);
 
   // 格式化时间
   const formatTime = (seconds: number) => {
@@ -722,9 +734,10 @@ const ApiDebug: React.FC = () => {
   };
 
   // 错误分级文案
-  const getErrorMessage = (error: any, response?: Response) => {
+  const getErrorMessage = (error: unknown, response?: Response) => {
     const status = response?.status;
-    const code = error?.code || error?.error_code;
+    const errorObj = error as { code?: string; error_code?: string; message?: string };
+    const code = errorObj?.code || errorObj?.error_code;
     
     // 根据状态码分类
     if (status === 400 || code === 'VALIDATION_ERROR') {
@@ -782,7 +795,7 @@ const ApiDebug: React.FC = () => {
     }
     
     // 网络错误
-    if (error?.message?.includes('fetch')) {
+    if (errorObj?.message?.includes('fetch')) {
       return {
         type: 'network',
         title: '网络连接错误',
@@ -794,13 +807,14 @@ const ApiDebug: React.FC = () => {
     return {
       type: 'unknown',
       title: '未知错误',
-      message: error?.message || '发生了未知错误',
+      message: errorObj?.message || '发生了未知错误',
       suggestion: '建议：查看控制台日志获取更多信息'
     };
   };
 
   // 错误显示组件
-  const ErrorDisplay: React.FC<{ error: any; response?: Response }> = ({ error, response }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const ErrorDisplay: React.FC<{ error: unknown; response?: Response }> = ({ error, response }) => {
     const errorInfo = getErrorMessage(error, response);
     const typeColors = {
       validation: 'border-yellow-200 bg-yellow-50',
@@ -834,9 +848,9 @@ const ApiDebug: React.FC = () => {
       setArkLoading(true);
       const startTime = Date.now();
     try {
-      let frontendParams: any;
-      let backendParams: any;
-      let volcengineParams: any;
+      let frontendParams: Record<string, unknown>;
+      let backendParams: Record<string, unknown>;
+      let volcengineParams: Record<string, unknown>;
       let url: string;
       
       const baseUrl = getApiBaseUrl();
@@ -1112,17 +1126,18 @@ const ApiDebug: React.FC = () => {
           throw new Error(`HTTP ${response.status}: ${errorData?.error || response.statusText}`);
         }
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Request Error:', error);
       
-      if (error.name === 'AbortError') {
+      const errorObj = error as { name?: string; message?: string };
+      if (errorObj.name === 'AbortError') {
         setTtsResponse({
           success: false,
           error: '请求已取消',
           duration: 0
         });
       } else {
-        const errorMessage = error.message || '调用出错';
+        const errorMessage = errorObj.message || '调用出错';
         setTtsResponse({
           success: false,
           error: retryCount > 0 ? `${errorMessage} (已重试 ${retryCount} 次)` : errorMessage,
@@ -1237,7 +1252,7 @@ const ApiDebug: React.FC = () => {
       };
 
       // 后端映射 (snake_case) - 自动深度转换
-      const backendParams = camelToSnakeDeep(frontendParams);
+      const backendParams = camelToSnakeDeep(frontendParams) as Record<string, unknown>;
 
       // 火山引擎参数示意
       const volcengineParams = generateVolcengineVoiceCloneTrainParams(backendParams);
@@ -1245,7 +1260,7 @@ const ApiDebug: React.FC = () => {
       setVcParams({
         frontend: frontendParams,
         backend: backendParams,
-        volcengine: volcengineParams
+        volcengine: volcengineParams as Record<string, unknown>
       });
 
       const url = '/api/voice-clone/train';
@@ -1280,9 +1295,10 @@ const ApiDebug: React.FC = () => {
         const vid = data?.data?.id || data?.data?.voiceId || '';
         if (vid) setCurrentVoiceId(vid);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       const errorDuration = Date.now() - startTime;
-      setVcResponse({ success: false, error: e?.message || '请求失败' });
+      const errorObj = e as { message?: string };
+      setVcResponse({ success: false, error: errorObj?.message || '请求失败' });
       
       // 记录错误请求历史
       addRequestHistory({
@@ -1313,8 +1329,9 @@ const ApiDebug: React.FC = () => {
       } else {
         setVcStatus({ success: true, data: data?.data });
       }
-    } catch (e: any) {
-      setVcStatus({ success: false, error: e?.message || '请求失败' });
+    } catch (e: unknown) {
+      const errorObj = e as { message?: string };
+      setVcStatus({ success: false, error: errorObj?.message || '请求失败' });
     } finally {
       setVcStatusLoading(false);
     }
@@ -1329,8 +1346,9 @@ const ApiDebug: React.FC = () => {
       } else {
         setVcList(Array.isArray(data?.data) ? data.data : []);
       }
-    } catch (e: any) {
-      alert(e?.message || '请求失败');
+    } catch (e: unknown) {
+      const errorObj = e as { message?: string };
+      alert(errorObj?.message || '请求失败');
     }
   };
 

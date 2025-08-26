@@ -30,6 +30,7 @@ const MOCK_USERS = [
 /**
  * Mock 内容历史数据
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MOCK_CONTENT_HISTORY = [
   {
     id: 'content_001',
@@ -83,6 +84,7 @@ const MOCK_VOICE_CLONES = [
 /**
  * Mock 支付订单数据
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MOCK_PAYMENT_ORDERS = [
   {
     id: 'order_001',
@@ -137,7 +139,8 @@ const generateId = (prefix: string = 'mock'): string => {
  * Mock Ark服务
  */
 export class MockArkService {
-  static async generate(params: { messages: any[]; model?: string; temperature?: number; maxTokens?: number }): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  static async generate(params: { messages: unknown[]; model?: string; temperature?: number; maxTokens?: number }): Promise<unknown> {
     await randomDelay(1000, 3000);
     
     const responses = [
@@ -158,7 +161,7 @@ export class MockArkService {
     };
   }
   
-  static async generateStory(params: { theme: string; style?: string; length?: string }): Promise<any> {
+  static async generateStory(params: { theme: string; style?: string; length?: string }): Promise<unknown> {
     await randomDelay(1000, 3000);
     
     const { theme, style, length } = params;
@@ -188,7 +191,7 @@ export class MockArkService {
     };
   }
   
-  static async generateKnowledge(params: { topic: string; gestationalWeek?: number }): Promise<any> {
+  static async generateKnowledge(params: { topic: string; gestationalWeek?: number }): Promise<unknown> {
     await randomDelay(800, 2000);
     
     const { topic, gestationalWeek } = params;
@@ -223,7 +226,7 @@ export class MockArkService {
  * Mock TTS 语音合成服务
  */
 export class MockTTSService {
-  static async synthesize(params: { text: string; voiceType: string; speed?: number; emotion?: string }): Promise<any> {
+  static async synthesize(params: { text: string; voiceType: string; speed?: number; emotion?: string }): Promise<unknown> {
     await randomDelay(2000, 5000);
     
     // 模拟音频生成
@@ -243,7 +246,7 @@ export class MockTTSService {
     };
   }
   
-  static getVoices(): any {
+  static getVoices(): unknown {
     return {
       success: true,
       data: [
@@ -270,7 +273,8 @@ export class MockTTSService {
  * Mock 声音复刻服务
  */
 export class MockVoiceCloneService {
-  static async startTraining(speakerName: string, audioFiles: any[]): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  static async startTraining(speakerName: string, audioFiles: unknown[]): Promise<unknown> {
     await randomDelay(1000, 2000);
     
     const voiceClone = {
@@ -307,7 +311,7 @@ export class MockVoiceCloneService {
     };
   }
   
-  static async getTrainingStatus(voiceId: string): Promise<any> {
+  static async getTrainingStatus(voiceId: string): Promise<unknown> {
     await randomDelay(200, 500);
     
     const mockVoice = MOCK_VOICE_CLONES.find(v => v.id === voiceId);
@@ -325,7 +329,7 @@ export class MockVoiceCloneService {
     };
   }
   
-  static async listVoiceClones(userId: string): Promise<any> {
+  static async listVoiceClones(userId: string): Promise<unknown> {
     await randomDelay(300, 800);
     
     const userVoices = MOCK_VOICE_CLONES.filter(v => v.userId === userId);
@@ -341,7 +345,7 @@ export class MockVoiceCloneService {
  * Mock 用户认证服务
  */
 export class MockAuthService {
-  static async login(email: string, password: string): Promise<any> {
+  static async login(email: string, password: string): Promise<unknown> {
     await randomDelay(500, 1500);
     
     const user = MOCK_USERS.find(u => u.email === email);
@@ -371,14 +375,16 @@ export class MockAuthService {
     };
   }
   
-  static async register(userData: any): Promise<any> {
+  static async register(userData: unknown): Promise<unknown> {
     await randomDelay(800, 2000);
     
+    const userObj = userData as { name?: string; email?: string };
     const newUser = {
       id: generateId('user'),
-      ...userData,
+      email: userObj.email || 'demo@example.com',
+      name: userObj.name || 'Demo User',
       plan: 'free',
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.name}`,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userObj.name || 'default'}`,
       createdAt: new Date().toISOString()
     };
     
@@ -394,7 +400,7 @@ export class MockAuthService {
     };
   }
   
-  static async getUserProfile(userId: string): Promise<any> {
+  static async getUserProfile(userId: string): Promise<unknown> {
     await randomDelay(200, 600);
     
     const user = MOCK_USERS.find(u => u.id === userId);
@@ -417,7 +423,7 @@ export class MockAuthService {
  * Mock 支付服务
  */
 export class MockPaymentService {
-  static async createOrder(userId: string, planId: string): Promise<any> {
+  static async createOrder(userId: string, planId: string): Promise<unknown> {
     await randomDelay(1000, 2000);
     
     const plans = {
@@ -451,7 +457,7 @@ export class MockPaymentService {
     };
   }
   
-  static async getOrderStatus(orderId: string): Promise<any> {
+  static async getOrderStatus(orderId: string): Promise<unknown> {
     await randomDelay(300, 800);
     
     // 模拟随机支付结果
@@ -473,7 +479,7 @@ export class MockPaymentService {
  * Mock 分析服务
  */
 export class MockAnalyticsService {
-  static async trackEvent(event: string, properties: any): Promise<any> {
+  static async trackEvent(event: string, properties: unknown): Promise<unknown> {
     await randomDelay(100, 300);
     
     console.log(`📊 Mock Analytics - Event: ${event}`, properties);
@@ -487,7 +493,8 @@ export class MockAnalyticsService {
     };
   }
   
-  static async getStats(timeRange: string = '7d'): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  static async getStats(timeRange: string = '7d'): Promise<unknown> {
     await randomDelay(500, 1200);
     
     return {
@@ -530,7 +537,7 @@ export class MockServiceFactory {
  * Mock 中间件
  * 在响应头中添加 Mock 标识
  */
-export const mockMiddleware = (req: Request, res: Response, next: any) => {
+export const mockMiddleware = (req: Request, res: Response, next: () => void) => {
   res.setHeader('X-Mock-Mode', 'true');
   res.setHeader('X-Mock-Timestamp', new Date().toISOString());
   next();

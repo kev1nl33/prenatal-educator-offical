@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, AlertCircle, CheckCircle, XCircle, Filter, Search, Trash2, Download } from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle, XCircle, Search, Trash2, Download } from 'lucide-react';
 import { getFriendlyErrorMessage } from '../utils/parameterMapping';
 
 interface ApiLog {
@@ -205,7 +205,7 @@ const DebugLogs: React.FC = () => {
             
             <select
               value={apiFilter}
-              onChange={(e) => setApiFilter(e.target.value as 'all' | 'ark' | 'tts' | 'vc')}
+              onChange={(e) => setApiFilter(e.target.value as 'all' | 'ark' | 'tts' | 'voice-clone')}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             >
               <option value="all">所有 API</option>

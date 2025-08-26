@@ -13,8 +13,25 @@ const router = express.Router();
  * 集成超时控制和错误处理
  */
 
+// 定义消息类型
+interface ArkMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+// 定义Ark参数类型
+interface ArkParams {
+  messages: ArkMessage[];
+  model: string;
+  temperature?: number;
+  max_tokens?: number;
+  top_p?: number;
+  stream?: boolean;
+}
+
 // 验证Ark参数
-const validateArkParams = (params: any): { valid: boolean; errors: string[] } => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const validateArkParams = (params: ArkParams): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
   
   // 检查messages参数
@@ -22,7 +39,7 @@ const validateArkParams = (params: any): { valid: boolean; errors: string[] } =>
     errors.push('messages 参数是必需的，且必须是数组');
   } else {
     // 检查每个message的格式
-    params.messages.forEach((message: any, index: number) => {
+    params.messages.forEach((message: ArkMessage, index: number) => {
       if (!message.role || !['system', 'user', 'assistant'].includes(message.role)) {
         errors.push(`messages[${index}].role 必须是 'system', 'user' 或 'assistant'`);
       }
@@ -71,7 +88,7 @@ const validateArkParams = (params: any): { valid: boolean; errors: string[] } =>
 };
 
 // 调用火山引擎Ark API
-const callVolcengineArk = async (params: any, timeoutMs: number = 10000): Promise<any> => {
+const callVolcengineArk = async (params: ArkParams, timeoutMs: number = 10000): Promise<unknown> => {
   const apiKey = process.env.VOLCENGINE_ARK_API_KEY;
   
   if (!apiKey) {
@@ -100,13 +117,14 @@ const callVolcengineArk = async (params: any, timeoutMs: number = 10000): Promis
     });
     
     return response.data;
-  } catch (error: any) {
-    if (error.code === 'ECONNABORTED') {
+  } catch (error: unknown) {
+    const err = error as { code?: string; response?: { status: number } };
+    if (err.code === 'ECONNABORTED') {
       throw new Error(`Ark请求超时（${timeoutMs}ms）`);
     }
     
-    if (error.response) {
-      const statusCode = error.response.status;
+    if (err.response) {
+      const statusCode = err.response.status;
       let message = '服务异常，请稍后重试';
       
       switch (statusCode) {
@@ -124,7 +142,7 @@ const callVolcengineArk = async (params: any, timeoutMs: number = 10000): Promis
       throw new Error(`${message} (状态码: ${statusCode})`);
     }
     
-    throw error;
+    throw err;
   }
 };
 
@@ -165,12 +183,13 @@ router.post('/generate', asyncHandler(async (req: Request, res: Response) => {
     // 更新统计数据
     updateServiceStats('ark', duration, true);
     
+    const resultObj = result as { content?: string; usage?: unknown };
     return res.json({
       success: true,
       data: {
-        content: result.content,
+        content: resultObj.content,
         model,
-        usage: result.usage,
+        usage: resultObj.usage,
         mock: true
       },
       timestamp: new Date().toISOString()
@@ -190,20 +209,22 @@ router.post('/generate', asyncHandler(async (req: Request, res: Response) => {
     // 更新统计数据
     updateServiceStats('ark', duration, true);
     
+    const resultObj = result as { content?: string; usage?: unknown };
     res.json({
       success: true,
       data: {
-        content: result.content,
+        content: resultObj.content,
         model,
-        usage: result.usage
+        usage: resultObj.usage
       },
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
-    const duration = Date.now() - (req as any).startTime || 0;
+  } catch (error: unknown) {
+    const err = error as { message?: string; statusCode?: number };
+    const duration = Date.now() - (req as { startTime?: number }).startTime || 0;
     // 更新统计数据
     updateServiceStats('ark', duration, false);
-    throw createError(error.message || 'Ark生成失败', error.statusCode || 500);
+    throw createError(err.message || 'Ark生成失败', err.statusCode || 500);
   }
 }));
 
@@ -228,7 +249,7 @@ router.post('/story', async (req, res) => {
     // 构建故事生成的messages
     const messages = [
       {
-        role: 'system',
+        role: 'system' as const,
         content: `你是一个专业的胎教故事创作者。请根据用户提供的主题创作一个温馨、积极、适合胎教的故事。
 
 要求：
@@ -241,7 +262,7 @@ router.post('/story', async (req, res) => {
 请直接输出故事内容，不需要额外的说明。`
       },
       {
-        role: 'user',
+        role: 'user' as const,
         content: `请创作一个关于"${theme}"的胎教故事。`
       }
     ];
@@ -255,7 +276,10 @@ router.post('/story', async (req, res) => {
     };
     
     // 调用Ark API
-    const result = await callVolcengineArk(arkParams, 10000);
+    const result = await callVolcengineArk(arkParams, 10000) as {
+      choices?: Array<{ message?: { content?: string } }>;
+      usage?: unknown;
+    };
     const story = result.choices?.[0]?.message?.content || '';
     
     const duration = Date.now() - startTime;
@@ -284,20 +308,21 @@ router.post('/story', async (req, res) => {
       timestamp: new Date().toISOString()
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string };
     const duration = Date.now() - startTime;
     // 更新统计数据
     updateServiceStats('ark', duration, false);
     
     console.error('故事生成错误:', {
-      error: error.message,
+      error: err.message,
       duration,
       success: false
     });
     
     res.status(500).json({
       success: false,
-      error: error.message || '故事生成失败，请稍后重试',
+      error: err.message || '故事生成失败，请稍后重试',
       timestamp: new Date().toISOString()
     });
   }
@@ -332,13 +357,14 @@ router.post('/knowledge', asyncHandler(async (req: Request, res: Response) => {
     // 更新统计数据
     updateServiceStats('ark', duration, true);
     
+    const resultObj = result as { content?: string };
     return res.json({
       success: true,
       data: {
-        content: result.content,
+        content: resultObj.content,
         topic,
         gestationalWeek,
-        wordCount: result.content.length,
+        wordCount: resultObj.content?.length || 0,
         mock: true
       },
       timestamp: new Date().toISOString()
@@ -363,13 +389,13 @@ router.post('/knowledge', asyncHandler(async (req: Request, res: Response) => {
     const startTime = Date.now();
     const result = await callVolcengineArk({
       messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
+        { role: 'system' as const, content: systemPrompt },
+        { role: 'user' as const, content: userPrompt }
       ],
       model: 'ep-20241230140956-8xqzm',
       temperature: 0.3,
       max_tokens: 800
-    });
+    }) as { content?: string; usage?: unknown };
     
     const duration = Date.now() - startTime;
     // 更新统计数据
@@ -381,16 +407,17 @@ router.post('/knowledge', asyncHandler(async (req: Request, res: Response) => {
         content: result.content,
         topic,
         gestationalWeek,
-        wordCount: result.content.length,
+        wordCount: result.content?.length || 0,
         usage: result.usage
       },
       timestamp: new Date().toISOString()
     });
-  } catch (error: any) {
-    const duration = Date.now() - (req as any).startTime || 0;
+  } catch (error: unknown) {
+    const err = error as { message?: string; statusCode?: number };
+    const duration = Date.now() - (req as { startTime?: number }).startTime || 0;
     // 更新统计数据
     updateServiceStats('ark', duration, false);
-    throw createError(error.message || '知识内容生成失败', error.statusCode || 500);
+    throw createError(err.message || '知识内容生成失败', err.statusCode || 500);
   }
 }));
 

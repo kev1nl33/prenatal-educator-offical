@@ -191,7 +191,7 @@ class RateLimiter {
   } {
     const now = Date.now();
     const activeClients = Array.from(this.clients.entries())
-      .filter(([_, client]) => now < client.resetTime)
+      .filter(([, client]) => now < client.resetTime)
       .map(([clientId, client]) => ({
         clientId: clientId.substring(0, 8) + '****', // 脱敏处理
         count: client.count,
